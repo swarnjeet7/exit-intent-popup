@@ -1,7 +1,7 @@
 (function() {
 
     window.promotionPopup = function () {
-        let promotionCookie = 'isPromotionFormFilled', mobileAutoPopup;
+        let promotionCookie = 'isPromotionViewed', mobileAutoPopup;
 
         const makePopup = (className) => {
             $('body').append(`
@@ -183,13 +183,12 @@
                 </div>`);
         }
 
-        const closePopup = () => {
+        const close = () => {
             const modal = document.getElementById('modalWindow');
             if(modal) {
                 modal.classList.remove('active');
-                setCookie(promotionCookie, true);
-                if(isMobile) {
-                    clearInterval(mobileAutoPopup);
+                if(!isMobile) {
+                    setCookie(promotionCookie, true);
                 }
             }
             document.body.classList.remove('modal-active');
@@ -235,7 +234,11 @@
         const formSubmit = () => {
             const inputs = document.querySelectorAll('input.form-input');
             if(formValidate(inputs)) {
-                closePopup();
+                if(isMobile) {
+                    clearInterval(mobileAutoPopup);
+                    setCookie(promotionCookie, true);
+                }
+                close();
             }
         }
 
@@ -265,7 +268,7 @@
         const bindEvents = () => {
             const closeBtn = document.getElementById('closeModal')
             if(closeBtn) {
-                closeBtn.addEventListener('click', closePopup)
+                closeBtn.addEventListener('click', close)
             }
             const submitBtn = document.getElementById('submitForm');
             if(submitBtn) {
@@ -277,7 +280,7 @@
             return (/iphone|ipod|android|ie|blackberry|fennec/).test(navigator.userAgent.toLowerCase());
         }
         
-        const showPopup = () => {
+        const show = () => {
             const popup = document.getElementById('modalWindow');
             document.body.classList.add('modal-active');
             if(popup) {
@@ -290,32 +293,26 @@
         }
         
         const init = () => {
-            if(isMobile()) {
-                if(!getCookie(promotionCookie)) {
+            if(!getCookie(promotionCookie)) {
+                if(isMobile()) {
                     mobileAutoPopup = setInterval(function (argument) {
-                            showPopup()
+                        show()
                     }, 5000)
-                }
-            } else {
-                window.addEventListener('beforeunload', function (e) {
-                    if(!getCookie(promotionCookie)) {
-                        showPopup()
-                        // Cancel the event
-                        e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
-                        // Chrome requires returnValue to be set
+                } else {
+                    window.addEventListener('beforeunload', function (e) {
+                        show()
+                        e.preventDefault();
                         e.returnValue = "why are you leaving?";
-                    }
-                });
+                    });
+                }
             }
-            
         }
 
         return {
             init,
-            showPopup,
-            closePopup
+            show,
+            close
         }
-
     }();
 
     promotionPopup.init();
